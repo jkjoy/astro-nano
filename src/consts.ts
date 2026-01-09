@@ -42,3 +42,10 @@ export const SOCIALS: Socials = [
     HREF: "https://t.me/imsunpw",
   }
 ];
+
+export const TWIKOO = {
+  ENV_ID: "https://t.memos.ee",
+  EL_ID: "twikoo-comments",
+  REGION: "",
+  LANG: "zh-CN",
+} as const;

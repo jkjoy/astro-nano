@@ -6,18 +6,17 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatDate(date: Date) {
-  return Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "2-digit",
-    year: "numeric"
-  }).format(date);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}年${month}月${day}日`;
 }
 
 export function readingTime(html: string) {
   const textOnly = html.replace(/<[^>]+>/g, "");
   const wordCount = textOnly.split(/\s+/).length;
   const readingTimeMinutes = ((wordCount / 200) + 1).toFixed();
-  return `${readingTimeMinutes} min read`;
+  return `需 ${readingTimeMinutes} 分钟阅读`;
 }
 
 export function dateRange(startDate: Date, endDate?: Date | string): string {

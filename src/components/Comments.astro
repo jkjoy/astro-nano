@@ -1,27 +1,192 @@
 ---
-import type { CollectionEntry } from "astro:content";
+import { TWIKOO } from "@consts";
 
 type Props = {
-  entry: CollectionEntry<"blog"> | CollectionEntry<"projects">;
-}
+  title?: string;
+  envId?: string;
+  region?: string;
+  lang?: string;
+  elId?: string;
+  path?: string;
+};
 
-const { entry } = Astro.props;
+const {
+  title = "评论",
+  envId = TWIKOO.ENV_ID,
+  region = TWIKOO.REGION || undefined,
+  lang = TWIKOO.LANG || undefined,
+  elId = TWIKOO.EL_ID,
+  path,
+} = Astro.props;
 ---
 
-<a href={`/${entry.collection}/${entry.slug}`} class="relative group flex flex-nowrap py-3 px-4 pr-10 rounded-lg border border-black/15 dark:border-white/20 hover:bg-black/5 dark:hover:bg-white/5 hover:text-black dark:hover:text-white transition-colors duration-300 ease-in-out">
-  <div class="flex flex-col flex-1 truncate">
-    <div class="font-semibold">
-      {entry.data.title}
+{envId && (
+  <section class="animate mt-16 pt-10 border-t border-black/10 dark:border-white/15">
+    <div class="mb-4 text-lg font-semibold text-black dark:text-white">
+      {title}
     </div>
-    <div class="text-sm">
-      {entry.data.description}
+    <div
+      id={`${elId}-status`}
+      class="mb-3 text-sm text-black/60 dark:text-white/60"
+    >
+      正在加载评论…
     </div>
-  </div>
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    viewBox="0 0 24 24"
-    class="absolute top-1/2 right-2 -translate-y-1/2 size-5 stroke-2 fill-none stroke-current">
-    <line x1="5" y1="12" x2="19" y2="12" class="translate-x-3 group-hover:translate-x-0 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-in-out" />
-    <polyline points="12 5 19 12 12 19" class="-translate-x-1 group-hover:translate-x-0 transition-transform duration-300 ease-in-out" />
-  </svg>
-</a>
+    <div id={elId} />
+    <script is:inline define:vars={{ envId, region, lang, elId, path }}>
+      (function () {
+        window.__twikooAstro = window.__twikooAstro || {
+          loading: null,
+          hooked: false,
+          config: null,
+        };
+
+        window.__twikooAstro.config = { envId, region, lang, elId, path };
+
+        function setStatus(message) {
+          var statusEl = document.getElementById(elId + "-status");
+          if (!statusEl) return;
+          statusEl.textContent = message || "";
+          if (!message) statusEl.style.display = "none";
+          else statusEl.style.display = "";
+        }
+
+        function loadScript(src) {
+          return new Promise(function (resolve, reject) {
+            var script = document.createElement("script");
+            script.src = src;
+            script.async = true;
+            script.onload = function () {
+              resolve();
+            };
+            script.onerror = function () {
+              reject(new Error("Failed to load script: " + src));
+            };
+            document.head.appendChild(script);
+          });
+        }
+
+        function ensureTwikooStyles() {
+          var existing = document.getElementById("twikoo-style");
+          if (existing) return Promise.resolve();
+
+          return new Promise(function (resolve) {
+            var link = document.createElement("link");
+            link.id = "twikoo-style";
+            link.rel = "stylesheet";
+            link.href =
+              "https://cdn.jsdelivr.net/npm/twikoo@1.6.31/dist/twikoo.min.css";
+            link.onload = function () {
+              resolve();
+            };
+            link.onerror = function () {
+              link.onerror = null;
+              link.href = "https://unpkg.com/twikoo@1.6.31/dist/twikoo.css";
+              resolve();
+            };
+            document.head.appendChild(link);
+          });
+        }
+
+        function isTwikooExport(value) {
+          if (!value) return false;
+          if (typeof value === "function") return true;
+          if (typeof value === "object") {
+            return (
+              typeof value.init === "function" || typeof value.default === "function"
+            );
+          }
+          return false;
+        }
+
+        function loadTwikoo() {
+          if (isTwikooExport(window.twikoo)) return Promise.resolve();
+          if (window.__twikooAstro.loading) return window.__twikooAstro.loading;
+
+          var sources = [
+            "https://cdn.jsdelivr.net/npm/twikoo@1.6.31/dist/twikoo.all.min.js",
+            "https://unpkg.com/twikoo@1.6.31/dist/twikoo.all.min.js",
+          ];
+
+          window.__twikooAstro.loading = sources
+            .reduce(function (promise, src) {
+              return promise.catch(function () {
+                return loadScript(src);
+              });
+            }, Promise.reject(new Error("init")))
+            .then(function () {});
+
+          return window.__twikooAstro.loading;
+        }
+
+        function initTwikoo() {
+          var config = window.__twikooAstro.config;
+          if (!config || !config.envId) {
+            setStatus("未配置 Twikoo：请在 src/consts.ts 里填写 TWIKOO.ENV_ID");
+            return;
+          }
+          var mountEl = document.getElementById(config.elId);
+          if (!mountEl) return;
+          if (mountEl.dataset.twikooMounting === "1") return;
+          if (mountEl.dataset.twikooMounted === "1") return;
+
+          setStatus("正在加载评论…");
+          mountEl.dataset.twikooMounting = "1";
+          mountEl.innerHTML = "";
+
+          ensureTwikooStyles()
+            .then(loadTwikoo)
+            .then(function () {
+              var tw = window.twikoo;
+              if (!isTwikooExport(tw)) {
+                throw new Error(
+                  "twikoo is not available on window (or overridden by an element id); " +
+                    "try changing TWIKOO.EL_ID"
+                );
+              }
+
+              var options = {
+                envId: config.envId,
+                el: "#" + config.elId,
+              };
+              if (config.region) options.region = config.region;
+              if (config.lang) options.lang = config.lang;
+              if (config.path) options.path = config.path;
+
+              var initFn =
+                (typeof tw.init === "function" && tw.init) ||
+                (typeof tw.default === "function" && tw.default) ||
+                (typeof tw === "function" && tw);
+
+              if (typeof initFn !== "function") {
+                throw new Error(
+                  "Invalid twikoo export: " +
+                    Object.prototype.toString.call(tw) +
+                    ", init=" +
+                    typeof tw.init +
+                    ", default=" +
+                    typeof tw.default
+                );
+              }
+
+              return Promise.resolve(initFn(options)).then(function () {
+                mountEl.dataset.twikooMounted = "1";
+                mountEl.dataset.twikooMounting = "0";
+                setStatus("");
+              });
+            })
+            .catch(function (err) {
+              mountEl.dataset.twikooMounting = "0";
+              setStatus("评论加载失败，请检查浏览器控制台/网络请求");
+              if (err && typeof console !== "undefined") console.error(err);
+            });
+        }
+
+        if (!window.__twikooAstro.hooked) {
+          window.__twikooAstro.hooked = true;
+          document.addEventListener("astro:page-load", initTwikoo);
+          document.addEventListener("DOMContentLoaded", initTwikoo);
+        }
+      })();
+    </script>
+  </section>
+)}
