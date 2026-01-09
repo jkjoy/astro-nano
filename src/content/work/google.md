@@ -1,8 +1,8 @@
 ---
-company: "Google"
-role: "Staff Software Engineer"
-dateStart: "11/27/2022"
-dateEnd: "Current"
+company: "性别男"
+role: "一个帅逼"
+dateStart: "1987/06"
+dateEnd: "至今"
 ---
 
-Sit amet consectetur adipisicing elit. Iure illo neque tempora, voluptatem est quaerat voluptas praesentium ipsa dolorem dignissimos nulla ratione distinctio quae maiores eligendi nostrum? Quibusdam, debitis voluptatum, lorem ipsum dolor.
+或许可以说曾经帅过

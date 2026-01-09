@@ -1,44 +1,44 @@
 import type { Site, Metadata, Socials } from "@types";
 
 export const SITE: Site = {
-  NAME: "Astro Nano",
-  EMAIL: "markhorn.dev@gmail.com",
-  NUM_POSTS_ON_HOMEPAGE: 3,
-  NUM_WORKS_ON_HOMEPAGE: 2,
+  NAME: "玩呢笔记",
+  EMAIL: "jkjoy@126.com",
+  NUM_POSTS_ON_HOMEPAGE: 5,
+  NUM_WORKS_ON_HOMEPAGE: 1,
   NUM_PROJECTS_ON_HOMEPAGE: 3,
 };
 
 export const HOME: Metadata = {
-  TITLE: "Home",
-  DESCRIPTION: "Astro Nano is a minimal and lightweight blog and portfolio.",
+  TITLE: "首页",
+  DESCRIPTION: "玩呢笔记是一个极简而轻量级的博客和作品集。",
 };
 
 export const BLOG: Metadata = {
-  TITLE: "Blog",
-  DESCRIPTION: "A collection of articles on topics I am passionate about.",
+  TITLE: "博客",
+  DESCRIPTION: "一个关于我热衷话题的文章集合。",
 };
 
 export const WORK: Metadata = {
-  TITLE: "Work",
+  TITLE: "关于",
   DESCRIPTION: "Where I have worked and what I have done.",
 };
 
 export const PROJECTS: Metadata = {
-  TITLE: "Projects",
-  DESCRIPTION: "A collection of my projects, with links to repositories and demos.",
+  TITLE: "项目",
+  DESCRIPTION: "一个关于我项目。",
 };
 
 export const SOCIALS: Socials = [
   { 
-    NAME: "twitter-x",
-    HREF: "https://twitter.com/markhorn_dev",
+    NAME: "Mastodon",
+    HREF: "https://jiong.us/@jkjoy",
   },
   { 
     NAME: "github",
-    HREF: "https://github.com/markhorn-dev"
+    HREF: "https://github.com/jkjoy"
   },
   { 
-    NAME: "linkedin",
-    HREF: "https://www.linkedin.com/in/markhorn-dev",
+    NAME: "telegram",
+    HREF: "https://t.me/imsunpw",
   }
 ];
