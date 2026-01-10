@@ -65,27 +65,29 @@ const {
           });
         }
 
-        function ensureTwikooStyles() {
-          var existing = document.getElementById("twikoo-style");
-          if (existing) return Promise.resolve();
+	        function ensureTwikooStyles() {
+	          var existing = document.getElementById("twikoo-style");
+	          if (existing) return Promise.resolve();
 
           return new Promise(function (resolve) {
-            var link = document.createElement("link");
-            link.id = "twikoo-style";
-            link.rel = "stylesheet";
-            link.href =
-              "https://cdn.jsdelivr.net/npm/twikoo@1.6.31/dist/twikoo.min.css";
-            link.onload = function () {
-              resolve();
-            };
-            link.onerror = function () {
-              link.onerror = null;
-              link.href = "https://unpkg.com/twikoo@1.6.31/dist/twikoo.css";
-              resolve();
-            };
-            document.head.appendChild(link);
-          });
-        }
+	            var link = document.createElement("link");
+	            link.id = "twikoo-style";
+	            link.rel = "stylesheet";
+	            link.href =
+	              "https://cdn.jsdelivr.net/npm/twikoo@1.6.39/dist/twikoo.min.css";
+	            link.onload = function () {
+	              resolve();
+	            };
+	            link.onerror = function () {
+	              link.onerror = null;
+	              link.onload = function () {
+	                resolve();
+	              };
+	              link.href = "https://unpkg.com/twikoo@1.6.39/dist/twikoo.css";
+	            };
+	            document.head.appendChild(link);
+	          });
+	        }
 
         function isTwikooExport(value) {
           if (!value) return false;
@@ -98,88 +100,92 @@ const {
           return false;
         }
 
-        function loadTwikoo() {
-          if (isTwikooExport(window.twikoo)) return Promise.resolve();
-          if (window.__twikooAstro.loading) return window.__twikooAstro.loading;
+	        async function loadTwikoo() {
+	          if (isTwikooExport(window.twikoo)) return;
+	          if (window.__twikooAstro.loading) return window.__twikooAstro.loading;
 
-          var sources = [
-            "https://cdn.jsdelivr.net/npm/twikoo@1.6.31/dist/twikoo.all.min.js",
-            "https://unpkg.com/twikoo@1.6.31/dist/twikoo.all.min.js",
-          ];
+	          window.__twikooAstro.loading = (async function () {
+	            var sources = [
+	              "https://cdn.jsdelivr.net/npm/twikoo@1.6.39/dist/twikoo.all.min.js",
+	              "https://unpkg.com/twikoo@1.6.39/dist/twikoo.all.min.js",
+	            ];
 
-          window.__twikooAstro.loading = sources
-            .reduce(function (promise, src) {
-              return promise.catch(function () {
-                return loadScript(src);
-              });
-            }, Promise.reject(new Error("init")))
-            .then(function () {});
+	            var lastErr = null;
+	            for (var i = 0; i < sources.length; i++) {
+	              try {
+	                await loadScript(sources[i]);
+	                return;
+	              } catch (err) {
+	                lastErr = err;
+	              }
+	            }
+	            throw lastErr || new Error("Failed to load twikoo");
+	          })();
 
-          return window.__twikooAstro.loading;
-        }
+	          return window.__twikooAstro.loading;
+	        }
 
-        function initTwikoo() {
-          var config = window.__twikooAstro.config;
-          if (!config || !config.envId) {
-            setStatus("未配置 Twikoo：请在 src/consts.ts 里填写 TWIKOO.ENV_ID");
-            return;
-          }
-          var mountEl = document.getElementById(config.elId);
-          if (!mountEl) return;
-          if (mountEl.dataset.twikooMounting === "1") return;
-          if (mountEl.dataset.twikooMounted === "1") return;
+	        async function initTwikoo() {
+	          var config = window.__twikooAstro.config;
+	          if (!config || !config.envId) {
+	            setStatus("未配置 Twikoo：请在 src/consts.ts 里填写 TWIKOO.ENV_ID");
+	            return;
+	          }
+	          var mountEl = document.getElementById(config.elId);
+	          if (!mountEl) return;
+	          if (mountEl.dataset.twikooMounting === "1") return;
+	          if (mountEl.dataset.twikooMounted === "1") return;
 
-          setStatus("正在加载评论…");
-          mountEl.dataset.twikooMounting = "1";
-          mountEl.innerHTML = "";
+	          setStatus("正在加载评论…");
+	          mountEl.dataset.twikooMounting = "1";
+	          mountEl.innerHTML = "";
 
-          ensureTwikooStyles()
-            .then(loadTwikoo)
-            .then(function () {
-              var tw = window.twikoo;
-              if (!isTwikooExport(tw)) {
-                throw new Error(
-                  "twikoo is not available on window (or overridden by an element id); " +
-                    "try changing TWIKOO.EL_ID"
-                );
-              }
+	          try {
+	            await ensureTwikooStyles();
+	            await loadTwikoo();
 
-              var options = {
-                envId: config.envId,
-                el: "#" + config.elId,
-              };
-              if (config.region) options.region = config.region;
-              if (config.lang) options.lang = config.lang;
-              if (config.path) options.path = config.path;
+	            var tw = window.twikoo;
+	            if (!isTwikooExport(tw)) {
+	              throw new Error(
+	                "twikoo is not available on window (or overridden by an element id); " +
+	                  "try changing TWIKOO.EL_ID"
+	              );
+	            }
 
-              var initFn =
-                (typeof tw.init === "function" && tw.init) ||
-                (typeof tw.default === "function" && tw.default) ||
-                (typeof tw === "function" && tw);
+	            var options = {
+	              envId: config.envId,
+	              el: "#" + config.elId,
+	            };
+	            if (config.region) options.region = config.region;
+	            if (config.lang) options.lang = config.lang;
+	            if (config.path) options.path = config.path;
 
-              if (typeof initFn !== "function") {
-                throw new Error(
-                  "Invalid twikoo export: " +
-                    Object.prototype.toString.call(tw) +
-                    ", init=" +
-                    typeof tw.init +
-                    ", default=" +
-                    typeof tw.default
-                );
-              }
+	            var initFn =
+	              (typeof tw.init === "function" && tw.init) ||
+	              (typeof tw.default === "function" && tw.default) ||
+	              (typeof tw === "function" && tw);
 
-              return Promise.resolve(initFn(options)).then(function () {
-                mountEl.dataset.twikooMounted = "1";
-                mountEl.dataset.twikooMounting = "0";
-                setStatus("");
-              });
-            })
-            .catch(function (err) {
-              mountEl.dataset.twikooMounting = "0";
-              setStatus("评论加载失败，请检查浏览器控制台/网络请求");
-              if (err && typeof console !== "undefined") console.error(err);
-            });
-        }
+	            if (typeof initFn !== "function") {
+	              throw new Error(
+	                "Invalid twikoo export: " +
+	                  Object.prototype.toString.call(tw) +
+	                  ", init=" +
+	                  typeof tw.init +
+	                  ", default=" +
+	                  typeof tw.default
+	              );
+	            }
+
+	            await Promise.resolve(initFn(options));
+	            mountEl.dataset.twikooMounted = "1";
+	            mountEl.dataset.twikooMounting = "0";
+	            setStatus("");
+	          } catch (err) {
+	            mountEl.dataset.twikooMounting = "0";
+	            setStatus("评论加载失败，请检查浏览器控制台/网络请求");
+	            if (err && typeof console !== "undefined") console.error(err);
+	          }
+	        }
 
         if (!window.__twikooAstro.hooked) {
           window.__twikooAstro.hooked = true;
